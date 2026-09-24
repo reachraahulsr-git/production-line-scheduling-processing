@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Java Engine Monitor - Production Line Resource Scheduling System{% endblock %}
+{% block page_title %}Java Multithreaded Processing Engine Monitor{% endblock %}
+
+{% block top_actions %}
+  <div style="display: flex; gap: 8px;">
+    <button type="button" class="btn btn-primary btn-sm" onclick="dispatchBatchToJava()">⚡ Dispatch Scheduled Jobs</button>
+    <button type="button" class="btn btn-warning btn-sm" onclick="pauseJavaEngine()">⏸ Pause</button>
+    <button type="button" class="btn btn-success btn-sm" onclick="resumeJavaEngine()">▶ Resume</button>
+    <button type="button" class="btn btn-danger btn-sm" onclick="stopJavaEngine()">⏹ Stop</button>
+  </div>
+{% endblock %}
+
+{% block content %}
+  <!-- Engine Architecture Banner -->
+  <div class="card" style="background: linear-gradient(135deg, #090d16 0%, #1e293b 100%); color: #f8fafc; border: 1px solid #334155;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+          <span style="font-size: 20px;">☕</span>
+          <h3 style="font-size: 17px; font-weight: 800; color: #ffffff;">Java Multithreaded Production Processing Daemon</h3>
+          <span class="status-badge" style="background-color: #0284c7; color: white;">TCP Socket Port 5050</span>
+        </div>
+        <p style="font-size: 13px; color: #94a3b8;">
+          Dedicated thread per physical machine • Fair <code>ReentrantLock</code> resource synchronization • Priority blocking queue dispatch.
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 24px;">
+        <div>
+          <div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Engine Status</div>
+          <div id="engineStatusText" style="font-size: 16px; font-weight: 800; color: #38bdf8;">
+            {% if status.isRunning %}ONLINE (RUNNING){% else %}READY{% endif %}
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Worker Threads</div>
+          <div id="activeThreadsCount" style="font-size: 16px; font-weight: 800; color: #38bdf8;">
+            {{ status.activeMachineThreads }} Active Threads
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Thread Pool Cards Grid -->
+  <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 14px; color: #1e293b;">Concurrent Machine Worker Threads</h3>
+  <div class="grid-4" id="threadPoolGrid">
+    {% for th in status.threads %}
+      <div class="thread-card" id="thread-card-{{ th.machine.id }}">
+        <div class="thread-header">
+          <span class="thread-name">{{ th.threadName }}</span>
+          <span class="status-badge {{ th.machine.state }}" id="thread-state-{{ th.machine.id }}">{{ th.machine.state }}</span>
+        </div>
+
+        <div style="font-size: 12.5px; margin-bottom: 10px;">
+          <strong>{{ th.machine.name }}</strong><br>
+          <span style="font-size: 11px; color: #64748b;">Lock: {{ 'LOCKED' if th.machine.isLocked else 'UNLOCKED' }}</span>
+        </div>
+
+        <div style="background-color: #f8fafc; padding: 10px; border-radius: 6px; font-size: 12px; margin-bottom: 12px;">
+          <div style="color: #64748b; margin-bottom: 4px;">Active Task:</div>
+          <div id="active-task-{{ th.machine.id }}" style="font-weight: 600;">
+            {% if th.activeJob %}
+              {{ th.activeJob.jobNumber }}: {{ th.activeJob.title }}
+            {% else %}
+              <span style="color: #94a3b8; font-style: italic;">Thread Idle (Waiting)</span>
+            {% endif %}
+          </div>
+          <div style="margin-top: 8px;">
+            <div class="progress-bar-bg" style="height: 6px;">
+              <div class="progress-bar-fill" id="thread-progress-{{ th.machine.id }}" style="width: {{ th.activeJob.progress if th.activeJob else 0 }}%;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 10.5px; color: #64748b; margin-top: 4px;">
+              <span>Progress</span>
+              <span id="thread-progress-pct-{{ th.machine.id }}">{{ th.activeJob.progress if th.activeJob else 0 }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size: 11px; color: #64748b; display: flex; justify-content: space-between;">
+          <span>Queue Depth: <strong id="queue-depth-{{ th.machine.id }}">{{ th.queueDepth }}</strong></span>
+          <span>Alive: <strong style="color: var(--success);">{{ 'YES' if th.isAlive else 'NO' }}</strong></span>
+        </div>
+      </div>
+    {% else %}
+      <p style="color: #94a3b8; padding: 20px;">No threads spawned yet. Click "Dispatch Scheduled Jobs" to initialize and run threads.</p>
+    {% endfor %}
+  </div>
+
+  <div class="grid-2" style="margin-top: 24px;">
+    <!-- Live Java Socket Event Stream Console -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Live Java Thread Event Stream</h3>
+        <span style="font-size: 11px; font-family: monospace; color: #64748b;">TCP 127.0.0.1:5050</span>
+      </div>
+      <div class="console-box" id="javaConsole">
+        {% for ev in status.events %}
+          <div><span style="color: #94a3b8;">[{{ ev.timestamp[11:19] }}]</span> <span style="color: #38bdf8;">[{{ ev.threadName }}]</span> {{ ev.message }}</div>
+        {% else %}
+          <div>[INIT] Java socket listener ready. Awaiting thread events...</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Scheduled Jobs Ready for Processing Queue -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Pending Dispatch Batch</h3>
+        <button type="button" class="btn btn-primary btn-sm" onclick="dispatchBatchToJava()">Send All to Java</button>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Job #</th>
+              <th>Title</th>
+              <th>Priority</th>
+              <th>Target Machine</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for j in scheduled_jobs %}
+              <tr>
+                <td><strong>{{ j.job_number }}</strong></td>
+                <td>{{ j.title }}</td>
+                <td><span class="priority-badge {{ j.priority }}">{{ j.priority }}</span></td>
+                <td>{{ j.machine_name or 'Auto' }}</td>
+                <td><span class="status-badge {{ j.status }}">{{ j.status }}</span></td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="5" style="text-align: center; color: #94a3b8; padding: 20px;">
+                  All jobs have been dispatched or completed.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/java_monitor.js') }}"></script>
+{% endblock %}

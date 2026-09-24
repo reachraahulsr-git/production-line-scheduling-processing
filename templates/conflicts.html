@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Conflict Hub - Production Line Resource Scheduling System{% endblock %}
+{% block page_title %}Resource Conflict Detection & Resolution Hub{% endblock %}
+
+{% block top_actions %}
+  <form method="POST" action="{{ url_for('resolve_conflicts') }}" style="display:inline;">
+    <button type="submit" class="btn btn-success btn-sm">⚡ Auto-Resolve & Re-Schedule All</button>
+  </form>
+{% endblock %}
+
+{% block content %}
+  <div class="card" style="border-left: 4px solid {% if conflicts %}var(--danger){% else %}var(--success){% endif %};">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title">
+          {% if conflicts %}
+            ⚠️ {{ conflicts|length }} Production Conflict(s) Detected
+          {% else %}
+            ✅ All Production Resources Synchronized (Zero Conflicts)
+          {% endif %}
+        </h3>
+        <p style="font-size: 13px; color: #64748b; margin-top: 4px;">
+          Scans simultaneously for machine double-bookings, operator overlap, material shortages, and offline machine assignments.
+        </p>
+      </div>
+      {% if conflicts %}
+        <form method="POST" action="{{ url_for('resolve_conflicts') }}">
+          <button type="submit" class="btn btn-danger btn-sm">Auto-Resolve Now</button>
+        </form>
+      {% endif %}
+    </div>
+
+    {% if conflicts %}
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Severity</th>
+              <th>Conflict Type</th>
+              <th>Resource Involved</th>
+              <th>Details & Diagnosis</th>
+              <th>Recommended Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in conflicts %}
+              <tr>
+                <td>
+                  <span class="status-badge Error">{{ c.severity }}</span>
+                </td>
+                <td><strong>{{ c.type }}</strong></td>
+                <td>{{ c.resource }}</td>
+                <td style="color: #475569;">{{ c.details }}</td>
+                <td>
+                  <span style="font-size: 12px; color: #0284c7; font-weight: 600;">
+                    Automated Slot Re-Routing
+                  </span>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 48px; color: #475569;">
+        <div style="font-size: 40px; margin-bottom: 12px;">🎉</div>
+        <h4 style="font-size: 16px; font-weight: 700; color: #0f172a;">Zero Resource Conflicts</h4>
+        <p style="font-size: 13px; color: #64748b; margin-top: 6px;">
+          All scheduled jobs are cleanly isolated in non-overlapping machine slots with verified material inventories.
+        </p>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

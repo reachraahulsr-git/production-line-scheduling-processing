@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Production Reports - Production Line Resource Scheduling System{% endblock %}
+{% block page_title %}Plant Performance Reports & Data Export{% endblock %}
+
+{% block top_actions %}
+  <a href="{{ url_for('export_csv') }}" class="btn btn-primary btn-sm">📥 Download CSV Report</a>
+  <button type="button" class="btn btn-outline btn-sm no-print" onclick="window.print()">🖨 Print Report</button>
+{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title">Comprehensive Production Run Report</h3>
+        <p style="font-size: 13px; color: #64748b; margin-top: 4px;">
+          Generated on {{ now.strftime('%B %d, %Y at %H:%M:%S') }} • System ID: 48434283
+        </p>
+      </div>
+      <div>
+        <span class="status-badge Completed">Official Plant Record</span>
+      </div>
+    </div>
+
+    <!-- Summary strip -->
+    <div style="display: flex; gap: 24px; padding: 14px; background-color: #f8fafc; border-radius: 6px; margin-bottom: 20px; flex-wrap: wrap;">
+      <div>
+        <span style="font-size: 11px; color: #64748b; text-transform: uppercase;">Total Planned Jobs</span><br>
+        <strong style="font-size: 16px;">{{ jobs|length }}</strong>
+      </div>
+      <div>
+        <span style="font-size: 11px; color: #64748b; text-transform: uppercase;">Total Units Scheduled</span><br>
+        <strong style="font-size: 16px;">{{ analytics.overview.total_units_in_pipeline }}</strong>
+      </div>
+      <div>
+        <span style="font-size: 11px; color: #64748b; text-transform: uppercase;">Overall Equipment Effectiveness</span><br>
+        <strong style="font-size: 16px; color: #0284c7;">{{ analytics.overview.oee_score }}%</strong>
+      </div>
+      <div>
+        <span style="font-size: 11px; color: #64748b; text-transform: uppercase;">Machine Utilization</span><br>
+        <strong style="font-size: 16px; color: var(--success);">{{ analytics.overview.machine_utilization_rate }}%</strong>
+      </div>
+      <div>
+        <span style="font-size: 11px; color: #64748b; text-transform: uppercase;">Inventory Valuation</span><br>
+        <strong style="font-size: 16px;">${{ analytics.overview.material_inventory_value }}</strong>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Job Code</th>
+            <th>Title</th>
+            <th>Product Category</th>
+            <th>Quantity</th>
+            <th>Priority</th>
+            <th>Assigned Machine</th>
+            <th>Lead Technician</th>
+            <th>Duration</th>
+            <th>Deadline</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for j in jobs %}
+            <tr>
+              <td><strong>{{ j.job_number }}</strong></td>
+              <td>{{ j.title }}</td>
+              <td>{{ j.product_type }}</td>
+              <td>{{ j.quantity }}</td>
+              <td><span class="priority-badge {{ j.priority }}">{{ j.priority }}</span></td>
+              <td>{{ j.machine_name or 'Unassigned' }}</td>
+              <td>{{ j.worker_name or 'Unassigned' }}</td>
+              <td>{{ j.processing_time_minutes }}m</td>
+              <td style="font-size: 12px;">{{ j.deadline }}</td>
+              <td><span class="status-badge {{ j.status }}">{{ j.status }}</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

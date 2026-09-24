@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register Operator - Production Line Resource Scheduling System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .auth-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 480px;
+      border-radius: 12px;
+      padding: 36px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-card">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <h2 style="font-size: 20px; font-weight: 800; color: #0f172a;">Register Personnel Account</h2>
+      <p style="font-size: 13px; color: #64748b; margin-top: 4px;">Join the production scheduling system</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">
+            <span>{{ message }}</span>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('register') }}">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" name="username" class="form-control" placeholder="johndoe" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" name="email" class="form-control" placeholder="john.doe@production.com" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" placeholder="Minimum 6 characters" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Role / Access Level</label>
+        <select name="role" class="form-control">
+          <option value="Operator">Operator (Floor Technician)</option>
+          <option value="Plant Manager">Plant Manager (Supervisor)</option>
+          <option value="Admin">System Administrator</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 10px; margin-top: 10px;">
+        Register User
+      </button>
+    </form>
+
+    <div style="text-align: center; margin-top: 18px; font-size: 13px;">
+      <span style="color: #64748b;">Already have an account?</span>
+      <a href="{{ url_for('login') }}" style="color: #0284c7; font-weight: 600; text-decoration: none;">Sign In</a>
+    </div>
+  </div>
+</body>
+</html>

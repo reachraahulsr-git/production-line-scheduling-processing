@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Scheduling Engine - Production Line Resource Scheduling System{% endblock %}
+{% block page_title %}Python Scheduling & Optimization Engine{% endblock %}
+
+{% block top_actions %}
+  <a href="{{ url_for('gantt_view') }}" class="btn btn-outline btn-sm">📅 View Gantt Chart</a>
+{% endblock %}
+
+{% block content %}
+  <!-- Scheduling Controls & Heuristic Formulation -->
+  <div class="card" style="background: linear-gradient(to right, #ffffff, #f0f9ff); border-left: 4px solid var(--primary);">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title">Automated Resource Allocation & Optimization</h3>
+        <p style="font-size: 13px; color: #64748b; margin-top: 4px;">
+          Calculates multi-criteria composite priority scores, verifies resource availability, detects overlap conflicts, and allocates conflict-free timeline slots.
+        </p>
+      </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('run_scheduling_engine') }}" style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+      <div class="form-group" style="margin-bottom: 0; min-width: 280px;">
+        <label class="form-label">Optimization Heuristic</label>
+        <select name="heuristic" class="form-control">
+          <option value="BALANCED">BALANCED Multi-Criteria (Priority + EDD + SPT)</option>
+          <option value="PRIORITY_FIRST">PRIORITY FIRST (Strict Critical/High Precedence)</option>
+          <option value="EDD">EDD (Earliest Due Date First)</option>
+          <option value="SPT">SPT (Shortest Processing Time First)</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="padding: 9px 20px;">
+        ⚡ Execute Scheduler Run
+      </button>
+
+      <form method="POST" action="{{ url_for('clear_schedules') }}" style="display:inline;">
+        <button type="submit" class="btn btn-outline" style="color: var(--danger); padding: 9px 16px;" onclick="return confirm('Reset all active allocations back to Pending?');">
+          Clear Active Allocations
+        </button>
+      </form>
+    </form>
+  </div>
+
+  <div class="grid-2">
+    <!-- Priority Analysis Breakdown -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Priority Analysis & Scoring Breakdown</h3>
+        <span style="font-size: 12px; color: #64748b;">(Pending/Scheduled Jobs)</span>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Job #</th>
+              <th>Base Weight</th>
+              <th>Urgency</th>
+              <th>SPT Score</th>
+              <th>Composite Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for j in ranked_jobs %}
+              <tr>
+                <td><strong>#{{ loop.index }}</strong></td>
+                <td>
+                  <strong>{{ j.job_number }}</strong><br>
+                  <span class="priority-badge {{ j.priority }}" style="font-size: 10px;">{{ j.priority }}</span>
+                </td>
+                <td>{{ j.score_breakdown.base_weight }} pts</td>
+                <td>{{ j.score_breakdown.urgency_score }} pts</td>
+                <td>{{ j.score_breakdown.spt_score }} pts</td>
+                <td>
+                  <strong style="color: #0284c7; font-size: 14px;">{{ j.composite_priority_score }}</strong>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Active Schedules Table -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Allocated Machine Time Slots</h3>
+        <a href="{{ url_for('gantt_view') }}" class="btn btn-sm btn-primary">Open Interactive Gantt</a>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Job</th>
+              <th>Machine</th>
+              <th>Worker</th>
+              <th>Start Time</th>
+              <th>End Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in schedules %}
+              <tr>
+                <td>
+                  <strong>{{ s.job_number }}</strong><br>
+                  <span style="font-size: 11px; color: #64748b;">{{ s.job_title }}</span>
+                </td>
+                <td><strong>{{ s.machine_name }}</strong></td>
+                <td>{{ s.worker_name }}</td>
+                <td style="font-size: 12px;">{{ s.start_time }}</td>
+                <td style="font-size: 12px;">{{ s.end_time }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="5" style="text-align: center; color: #94a3b8; padding: 24px;">
+                  No active schedules. Click "Execute Scheduler Run" above to allocate slots.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}

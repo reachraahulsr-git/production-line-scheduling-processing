@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Production Jobs - Production Line Resource Scheduling System{% endblock %}
+{% block page_title %}Production Job Management{% endblock %}
+
+{% block top_actions %}
+  <button type="button" class="btn btn-primary btn-sm" onclick="openCreateJobModal()">+ New Production Job</button>
+{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <div class="card-header" style="flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; gap: 8px;">
+        <a href="{{ url_for('jobs') }}" class="btn btn-sm {% if current_filter == 'All' %}btn-primary{% else %}btn-outline{% endif %}">All ({{ jobs|length }})</a>
+        <a href="{{ url_for('jobs', status='Pending') }}" class="btn btn-sm {% if current_filter == 'Pending' %}btn-primary{% else %}btn-outline{% endif %}">Pending</a>
+        <a href="{{ url_for('jobs', status='Scheduled') }}" class="btn btn-sm {% if current_filter == 'Scheduled' %}btn-primary{% else %}btn-outline{% endif %}">Scheduled</a>
+        <a href="{{ url_for('jobs', status='Processing') }}" class="btn btn-sm {% if current_filter == 'Processing' %}btn-primary{% else %}btn-outline{% endif %}">Processing</a>
+        <a href="{{ url_for('jobs', status='Completed') }}" class="btn btn-sm {% if current_filter == 'Completed' %}btn-primary{% else %}btn-outline{% endif %}">Completed</a>
+      </div>
+      <div>
+        <a href="{{ url_for('scheduling') }}" class="btn btn-warning btn-sm">⚡ Run Priority Scheduling</a>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Job Code</th>
+            <th>Title & Product</th>
+            <th>Quantity</th>
+            <th>Priority</th>
+            <th>Duration</th>
+            <th>Deadline</th>
+            <th>Resource Requirements</th>
+            <th>Assignment</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for j in jobs %}
+            <tr>
+              <td>
+                <strong style="font-family: monospace;">{{ j.job_number }}</strong>
+              </td>
+              <td>
+                <span style="font-weight: 600;">{{ j.title }}</span><br>
+                <span style="font-size: 11px; color: #64748b;">{{ j.product_type }}</span>
+              </td>
+              <td>{{ j.quantity }} units</td>
+              <td>
+                <span class="priority-badge {{ j.priority }}">{{ j.priority }}</span>
+              </td>
+              <td>{{ j.processing_time_minutes }} mins</td>
+              <td style="font-size: 12px;">{{ j.deadline }}</td>
+              <td style="font-size: 11.5px; color: #475569;">
+                • Machine: <strong>{{ j.required_machine_type }}</strong><br>
+                • Skill: {{ j.required_skill_level }}<br>
+                {% if j.material_name %}
+                  • Material: {{ j.material_name }} ({{ j.material_quantity_required }} {{ j.material_unit }})
+                {% endif %}
+              </td>
+              <td>
+                {% if j.machine_name %}
+                  <span style="font-weight: 600; color: #0284c7;">{{ j.machine_name }}</span><br>
+                  <span style="font-size: 11px; color: #64748b;">Op: {{ j.worker_name }}</span>
+                {% else %}
+                  <span style="color: #94a3b8; font-style: italic;">Unassigned</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="status-badge {{ j.status }}">{{ j.status }}</span>
+                <div class="progress-bar-bg" style="height: 4px; margin-top: 4px; width: 80px;">
+                  <div class="progress-bar-fill" style="width: {{ j.progress_percentage }}%;"></div>
+                </div>
+              </td>
+              <td>
+                <div style="display: flex; gap: 4px;">
+                  {% if j.status in ('Completed', 'Processing') %}
+                    <form method="POST" action="{{ url_for('generate_invoice', job_id=j.id) }}" style="display:inline;">
+                      <button type="submit" class="btn btn-sm btn-outline" title="Generate Invoice">Invoice</button>
+                    </form>
+                  {% endif %}
+                  <form method="POST" action="{{ url_for('delete_job', job_id=j.id) }}" onsubmit="return confirm('Delete Job {{ j.job_number }}?');" style="display:inline;">
+                    <button type="submit" class="btn btn-sm btn-danger" style="padding: 4px 8px;">✕</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Create Job Modal -->
+  <div id="createJobModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 style="font-size: 16px; font-weight: 700;">Create Production Job</h3>
+        <button type="button" onclick="closeCreateJobModal()" style="border:none;background:none;font-size:18px;cursor:pointer;">✕</button>
+      </div>
+      <div class="modal-body">
+        <form method="POST" action="{{ url_for('create_job') }}">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Job Number</label>
+              <input type="text" name="job_number" class="form-control" value="JOB-2026-{{ (range(100, 999)|random) }}" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Priority</label>
+              <select name="priority" class="form-control">
+                <option value="Low">Low</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="High">High</option>
+                <option value="Critical">Critical (Triggers Reschedule)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Job Title / Description</label>
+            <input type="text" name="title" class="form-control" placeholder="e.g. Avionics Guidance Bracket" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Product Type / Subassembly</label>
+              <input type="text" name="product_type" class="form-control" placeholder="e.g. Structural Mount" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Production Quantity</label>
+              <input type="number" name="quantity" class="form-control" value="50" min="1" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Processing Time (Minutes)</label>
+              <input type="number" name="processing_time_minutes" class="form-control" value="60" min="5" step="5" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Deadline Date & Time</label>
+              <input type="text" name="deadline" class="form-control" placeholder="YYYY-MM-DD HH:MM:SS" value="{{ now.strftime('%Y-%m-%d %H:%M:%S') }}" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Required Machine Type</label>
+              <select name="required_machine_type" class="form-control">
+                {% for m in machines %}
+                  <option value="{{ m.machine_type }}">{{ m.machine_type }} ({{ m.name }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Min Skill Level</label>
+              <select name="required_skill_level" class="form-control">
+                <option value="Junior">Junior</option>
+                <option value="Mid-Level" selected>Mid-Level</option>
+                <option value="Senior">Senior</option>
+                <option value="Master">Master</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Required Material</label>
+              <select name="required_material_id" class="form-control">
+                {% for mat in materials %}
+                  <option value="{{ mat.id }}">{{ mat.name }} (Avail: {{ mat.stock_quantity }} {{ mat.unit }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Required Quantity</label>
+              <input type="number" step="0.1" name="material_quantity_required" class="form-control" value="10.0" min="0.1" required>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+            <button type="button" class="btn btn-outline" onclick="closeCreateJobModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create Job</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function openCreateJobModal() {
+    document.getElementById('createJobModal').style.display = 'flex';
+  }
+  function closeCreateJobModal() {
+    document.getElementById('createJobModal').style.display = 'none';
+  }
+</script>
+{% endblock %}

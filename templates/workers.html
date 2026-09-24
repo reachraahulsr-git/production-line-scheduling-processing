@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Workers - Production Line Resource Scheduling System{% endblock %}
+{% block page_title %}Human Operator Roster & Skill Tracking{% endblock %}
+
+{% block top_actions %}
+  <button type="button" class="btn btn-primary btn-sm" onclick="openCreateWorkerModal()">+ Register Worker</button>
+{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Employee Code</th>
+            <th>Name</th>
+            <th>Role Title</th>
+            <th>Skill Tier</th>
+            <th>Hourly Wage</th>
+            <th>Shift Schedule</th>
+            <th>Availability</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for w in workers %}
+            <tr>
+              <td><strong style="font-family: monospace;">{{ w.employee_code }}</strong></td>
+              <td><strong>{{ w.name }}</strong></td>
+              <td>{{ w.role_title }}</td>
+              <td>
+                <span class="status-badge" style="background-color: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1;">
+                  {{ w.skill_level }}
+                </span>
+              </td>
+              <td>${{ w.hourly_wage }}/hr</td>
+              <td>{{ w.shift }}</td>
+              <td>
+                <span class="status-badge {{ w.availability_status }}">{{ w.availability_status }}</span>
+              </td>
+              <td>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                  <form method="POST" action="{{ url_for('update_worker_status_route', worker_id=w.id) }}" style="display:inline;">
+                    <select name="status" class="form-control" style="font-size: 11px; padding: 3px 6px; width: 105px;" onchange="this.form.submit()">
+                      <option value="Available" {% if w.availability_status == 'Available' %}selected{% endif %}>Available</option>
+                      <option value="Assigned" {% if w.availability_status == 'Assigned' %}selected{% endif %}>Assigned</option>
+                      <option value="On Leave" {% if w.availability_status == 'On Leave' %}selected{% endif %}>On Leave</option>
+                    </select>
+                  </form>
+                  <form method="POST" action="{{ url_for('delete_worker', worker_id=w.id) }}" onsubmit="return confirm('Remove worker {{ w.name }}?');">
+                    <button type="submit" class="btn btn-sm btn-outline" style="color: var(--danger); padding: 3px 6px;">✕</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Register Worker Modal -->
+  <div id="createWorkerModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 style="font-size: 16px; font-weight: 700;">Register Floor Operator</h3>
+        <button type="button" onclick="closeCreateWorkerModal()" style="border:none;background:none;font-size:18px;cursor:pointer;">✕</button>
+      </div>
+      <div class="modal-body">
+        <form method="POST" action="{{ url_for('create_worker') }}">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Employee Code</label>
+              <input type="text" name="employee_code" class="form-control" placeholder="e.g. EMP-107" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input type="text" name="name" class="form-control" placeholder="e.g. Rachel Adams" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Role Title</label>
+              <input type="text" name="role_title" class="form-control" placeholder="e.g. CNC Specialist" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Skill Level</label>
+              <select name="skill_level" class="form-control">
+                <option value="Junior">Junior</option>
+                <option value="Mid-Level" selected>Mid-Level</option>
+                <option value="Senior">Senior</option>
+                <option value="Master">Master</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Hourly Wage ($)</label>
+              <input type="number" step="0.5" name="hourly_wage" class="form-control" value="32.0" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Assigned Shift</label>
+              <select name="shift" class="form-control">
+                <option value="Day Shift (06:00 - 14:00)">Day Shift</option>
+                <option value="Swing Shift (14:00 - 22:00)">Swing Shift</option>
+                <option value="Night Shift (22:00 - 06:00)">Night Shift</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+            <button type="button" class="btn btn-outline" onclick="closeCreateWorkerModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Personnel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function openCreateWorkerModal() {
+    document.getElementById('createWorkerModal').style.display = 'flex';
+  }
+  function closeCreateWorkerModal() {
+    document.getElementById('createWorkerModal').style.display = 'none';
+  }
+</script>
+{% endblock %}

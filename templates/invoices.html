@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Invoices - Production Line Resource Scheduling System{% endblock %}
+{% block page_title %}Production Billing & Invoices{% endblock %}
+
+{% block top_actions %}
+  <button type="button" class="btn btn-primary btn-sm" onclick="openInvoiceModal()">+ Generate New Invoice</button>
+{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Invoice #</th>
+            <th>Job Reference</th>
+            <th>Client Name</th>
+            <th>Issue Date</th>
+            <th>Total Amount</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inv in invoices %}
+            <tr>
+              <td><strong style="font-family: monospace;">{{ inv.invoice_number }}</strong></td>
+              <td>
+                <strong>{{ inv.job_number }}</strong><br>
+                <span style="font-size: 11px; color: #64748b;">{{ inv.job_title }}</span>
+              </td>
+              <td><strong>{{ inv.client_name }}</strong></td>
+              <td>{{ inv.issue_date }}</td>
+              <td><strong style="font-size: 15px; color: #0284c7;">${{ inv.total_amount }}</strong></td>
+              <td>
+                <span class="status-badge {% if inv.status == 'Paid' %}Completed{% else %}Maintenance{% endif %}">
+                  {{ inv.status }}
+                </span>
+              </td>
+              <td>
+                <a href="{{ url_for('view_invoice', invoice_id=inv.id) }}" class="btn btn-outline btn-sm">View / Print</a>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="7" style="text-align: center; color: #94a3b8; padding: 24px;">
+                No invoices generated yet. Click "+ Generate New Invoice" above.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Generate Invoice Modal -->
+  <div id="invoiceModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 style="font-size: 16px; font-weight: 700;">Generate Production Invoice</h3>
+        <button type="button" onclick="closeInvoiceModal()" style="border:none;background:none;font-size:18px;cursor:pointer;">✕</button>
+      </div>
+      <div class="modal-body">
+        <form method="POST" id="invoiceGenForm" action="">
+          <div class="form-group">
+            <label class="form-label">Select Production Job</label>
+            <select id="jobSelect" class="form-control" onchange="updateInvoiceAction(this.value)" required>
+              <option value="">-- Choose Job --</option>
+              {% for j in jobs %}
+                <option value="{{ j.id }}">{{ j.job_number }}: {{ j.title }} ({{ j.status }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Client / Contracting Entity</label>
+            <input type="text" name="client_name" class="form-control" value="Apex Aerospace Engineering Corp" required>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+            <button type="button" class="btn btn-outline" onclick="closeInvoiceModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="submitInvoiceBtn" disabled>Generate Invoice</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function openInvoiceModal() {
+    document.getElementById('invoiceModal').style.display = 'flex';
+  }
+  function closeInvoiceModal() {
+    document.getElementById('invoiceModal').style.display = 'none';
+  }
+  function updateInvoiceAction(jobId) {
+    const btn = document.getElementById('submitInvoiceBtn');
+    const form = document.getElementById('invoiceGenForm');
+    if (jobId) {
+      form.action = `/invoices/generate/${jobId}`;
+      btn.disabled = false;
+    } else {
+      form.action = '';
+      btn.disabled = true;
+    }
+  }
+</script>
+{% endblock %}

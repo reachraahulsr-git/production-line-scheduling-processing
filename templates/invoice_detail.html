@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Invoice {{ invoice.invoice_number }} - Production Line Resource Scheduling System{% endblock %}
+{% block page_title %}Production Invoice Document{% endblock %}
+
+{% block top_actions %}
+  <a href="{{ url_for('invoices') }}" class="btn btn-outline btn-sm no-print">← Back to Invoices</a>
+  <button type="button" class="btn btn-primary btn-sm no-print" onclick="window.print()">🖨 Print Invoice</button>
+{% endblock %}
+
+{% block content %}
+  <div class="card" style="max-width: 820px; margin: 0 auto; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+    <!-- Invoice Header -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 24px; margin-bottom: 24px;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <div class="sidebar-logo" style="width: 32px; height: 32px; font-size: 16px;">PL</div>
+          <span style="font-size: 20px; font-weight: 800; color: #0f172a;">Apex Manufacturing Works</span>
+        </div>
+        <div style="font-size: 12.5px; color: #64748b; line-height: 1.5;">
+          Plant Operations & Resource Scheduling Center<br>
+          Facility Bay 4, Industrial Innovation Park<br>
+          Tax ID: US-IND-8849204
+        </div>
+      </div>
+
+      <div style="text-align: right;">
+        <h2 style="font-size: 24px; font-weight: 800; color: #0284c7; text-transform: uppercase; margin-bottom: 6px;">INVOICE</h2>
+        <div style="font-family: monospace; font-size: 14px; font-weight: 700; color: #1e293b;">{{ invoice.invoice_number }}</div>
+        <div style="font-size: 12.5px; color: #64748b; margin-top: 4px;">Date: {{ invoice.issue_date }}</div>
+        <div style="margin-top: 6px;">
+          <span class="status-badge {% if invoice.status == 'Paid' %}Completed{% else %}Maintenance{% endif %}">
+            {{ invoice.status }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Billed To & Job Details -->
+    <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
+      <div>
+        <div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 700; margin-bottom: 4px;">BILLED TO:</div>
+        <div style="font-size: 15px; font-weight: 700; color: #0f172a;">{{ invoice.client_name }}</div>
+        <div style="font-size: 12.5px; color: #475569;">Procurement & Manufacturing Accounts</div>
+      </div>
+      <div style="text-align: right;">
+        <div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 700; margin-bottom: 4px;">PRODUCTION JOB REFERENCE:</div>
+        <div style="font-size: 14px; font-weight: 700; color: #0f172a;">{{ invoice.job_number }}</div>
+        <div style="font-size: 12.5px; color: #475569;">{{ invoice.job_title }}</div>
+      </div>
+    </div>
+
+    <!-- Itemized Cost Table -->
+    <div class="table-container" style="margin-bottom: 24px;">
+      <table class="data-table">
+        <thead>
+          <tr style="background-color: #f1f5f9;">
+            <th>Cost Breakdown Component</th>
+            <th>Basis / Resource Details</th>
+            <th style="text-align: right;">Amount (USD)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <strong>Machine Operating & Tooling Time</strong><br>
+              <span style="font-size: 11px; color: #64748b;">Asset: {{ invoice.machine_name }}</span>
+            </td>
+            <td>Equipment run rate amortized per cycle minutes</td>
+            <td style="text-align: right; font-weight: 600;">${{ invoice.machine_cost }}</td>
+          </tr>
+          <tr>
+            <td>
+              <strong>Specialist Operator Labor</strong><br>
+              <span style="font-size: 11px; color: #64748b;">Lead Technician: {{ invoice.worker_name }}</span>
+            </td>
+            <td>Certified precision technician labor hours</td>
+            <td style="text-align: right; font-weight: 600;">${{ invoice.labor_cost }}</td>
+          </tr>
+          <tr>
+            <td>
+              <strong>Direct Raw Material Consumption</strong><br>
+              <span style="font-size: 11px; color: #64748b;">Material: {{ invoice.material_name or 'Direct Stock' }}</span>
+            </td>
+            <td>Stock inventory consumption & processing allowance</td>
+            <td style="text-align: right; font-weight: 600;">${{ invoice.material_cost }}</td>
+          </tr>
+          <tr>
+            <td>
+              <strong>Plant Overhead & Calibration</strong>
+            </td>
+            <td>Facility power, inspection, and tooling maintenance</td>
+            <td style="text-align: right; font-weight: 600;">${{ invoice.overhead_cost }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Invoice Summary Totals -->
+    <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
+      <div style="width: 280px;">
+        <div style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 13.5px; color: #475569;">
+          <span>Subtotal:</span>
+          <span>${{ invoice.total_amount }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 13.5px; color: #475569; border-bottom: 1px solid #e2e8f0;">
+          <span>Sales Tax (0% Industrial Exemption):</span>
+          <span>$0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 12px 0; font-size: 18px; font-weight: 800; color: #0f172a;">
+          <span>Total Balance Due:</span>
+          <span style="color: #0284c7;">${{ invoice.total_amount }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Note -->
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
+      Thank you for your business. Payment terms: Net 30 days upon invoice receipt. Electronic payments payable to Apex Manufacturing Works.
+    </div>
+  </div>
+{% endblock %}

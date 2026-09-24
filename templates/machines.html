@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Machines - Production Line Resource Scheduling System{% endblock %}
+{% block page_title %}Machine Fleet & Capacity Management{% endblock %}
+
+{% block top_actions %}
+  <button type="button" class="btn btn-primary btn-sm" onclick="openCreateMachineModal()">+ Add Machine</button>
+{% endblock %}
+
+{% block content %}
+  <div class="grid-4">
+    {% for m in machines %}
+      <div class="card" style="margin-bottom: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+          <div>
+            <span style="font-family: monospace; font-size: 11px; color: #0284c7; font-weight: 700;">{{ m.code }}</span>
+            <h4 style="font-size: 15px; font-weight: 700; color: #0f172a; margin-top: 2px;">{{ m.name }}</h4>
+          </div>
+          <span class="status-badge {{ m.status }}">{{ m.status }}</span>
+        </div>
+
+        <div style="font-size: 12px; color: #475569; margin-bottom: 12px; line-height: 1.6;">
+          • Type: <strong>{{ m.machine_type }}</strong><br>
+          • Capacity: <strong>{{ m.capacity_per_hour }}</strong> units/hr<br>
+          • Hourly Cost: <strong>${{ m.hourly_rate }}</strong>/hr<br>
+          • Location: {{ m.location }}
+        </div>
+
+        <div style="border-top: 1px solid var(--border); padding-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+          <form method="POST" action="{{ url_for('update_machine_status_route', machine_id=m.id) }}" style="display: flex; gap: 4px;">
+            <select name="status" class="form-control" style="font-size: 11px; padding: 4px 6px; width: 110px;" onchange="this.form.submit()">
+              <option value="Idle" {% if m.status == 'Idle' %}selected{% endif %}>Idle</option>
+              <option value="Running" {% if m.status == 'Running' %}selected{% endif %}>Running</option>
+              <option value="Maintenance" {% if m.status == 'Maintenance' %}selected{% endif %}>Maintenance</option>
+              <option value="Error" {% if m.status == 'Error' %}selected{% endif %}>Error</option>
+            </select>
+          </form>
+
+          <form method="POST" action="{{ url_for('delete_machine', machine_id=m.id) }}" onsubmit="return confirm('Remove machine {{ m.name }}?');">
+            <button type="submit" class="btn btn-sm btn-outline" style="color: var(--danger); padding: 4px 8px;">Delete</button>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Add Machine Modal -->
+  <div id="createMachineModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 style="font-size: 16px; font-weight: 700;">Add Production Machine</h3>
+        <button type="button" onclick="closeCreateMachineModal()" style="border:none;background:none;font-size:18px;cursor:pointer;">✕</button>
+      </div>
+      <div class="modal-body">
+        <form method="POST" action="{{ url_for('create_machine') }}">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Machine Code</label>
+              <input type="text" name="code" class="form-control" placeholder="e.g. EDM-07" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Machine Name</label>
+              <input type="text" name="name" class="form-control" placeholder="e.g. Wire EDM Sinker" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Machine Type</label>
+              <input type="text" name="machine_type" class="form-control" placeholder="e.g. CNC Milling" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Capacity (Units/Hour)</label>
+              <input type="number" name="capacity_per_hour" class="form-control" value="60" min="1" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Hourly Operating Cost ($)</label>
+              <input type="number" step="0.5" name="hourly_rate" class="form-control" value="55.0" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Facility Location</label>
+              <input type="text" name="location" class="form-control" value="Bay 3 - Fabrication Wing" required>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+            <button type="button" class="btn btn-outline" onclick="closeCreateMachineModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Machine</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function openCreateMachineModal() {
+    document.getElementById('createMachineModal').style.display = 'flex';
+  }
+  function closeCreateMachineModal() {
+    document.getElementById('createMachineModal').style.display = 'none';
+  }
+</script>
+{% endblock %}

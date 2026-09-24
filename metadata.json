@@ -1,0 +1,6 @@
+{
+  "name": "Production Line Resource Scheduling System",
+  "description": "An advanced production line resource scheduling system with Python Flask web dashboard, SymPy analytics engine, SQLite database, and Java multithreaded processing engine.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

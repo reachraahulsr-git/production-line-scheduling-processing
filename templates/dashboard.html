@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Production Line Resource Scheduling System{% endblock %}
+{% block page_title %}Plant Operations Dashboard{% endblock %}
+
+{% block top_actions %}
+  <a href="{{ url_for('scheduling') }}" class="btn btn-primary btn-sm">⚡ Run Scheduler</a>
+  <a href="{{ url_for('java_monitor') }}" class="btn btn-outline btn-sm">☕ Java Engine</a>
+{% endblock %}
+
+{% block content %}
+  <!-- Active System Alerts Widget -->
+  {% if active_alerts %}
+    <div class="card" style="border-left: 4px solid var(--danger); background-color: #fffaf0; margin-bottom: 24px;">
+      <div class="card-header" style="border-bottom: 1px solid #fee2e2;">
+        <span class="card-title" style="color: #991b1b; display: flex; align-items: center; gap: 8px;">
+          ⚠️ Active Facility Bottlenecks & Alerts ({{ active_alerts|length }})
+        </span>
+        <a href="{{ url_for('conflicts') }}" class="btn btn-sm btn-danger">Resolve in Conflict Hub</a>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        {% for a in active_alerts[:3] %}
+          <div style="font-size: 13px; color: #7f1d1d;">
+            <strong>[{{ a.severity }}] {{ a.title }}:</strong> {{ a.message }}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- KPI Cards Grid -->
+  <div class="grid-4">
+    <div class="kpi-card">
+      <div class="kpi-label">Active Machines</div>
+      <div class="kpi-value">{{ summary.machines.running }} <span style="font-size: 14px; font-weight: normal; color: #64748b;">/ {{ summary.machines.total }}</span></div>
+      <div class="kpi-subtext">
+        <span style="color: var(--success); font-weight: 600;">{{ summary.machines.idle }} Idle</span> • 
+        <span style="color: var(--warning); font-weight: 600;">{{ summary.machines.maintenance }} Maint</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-label">Production Jobs</div>
+      <div class="kpi-value">{{ summary.jobs.total }}</div>
+      <div class="kpi-subtext">
+        <span style="color: var(--info); font-weight: 600;">{{ summary.jobs.processing }} Processing</span> • 
+        <span>{{ summary.jobs.scheduled }} Scheduled</span> • 
+        <span style="color: var(--success);">{{ summary.jobs.completed }} Done</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-label">Floor Operators</div>
+      <div class="kpi-value">{{ summary.workers.assigned }} <span style="font-size: 14px; font-weight: normal; color: #64748b;">/ {{ summary.workers.total }}</span></div>
+      <div class="kpi-subtext">
+        <span style="color: var(--success); font-weight: 600;">{{ summary.workers.available }} Available</span> for dispatch
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-label">Material Deficits</div>
+      <div class="kpi-value" style="color: {% if summary.materials.low_stock > 0 %}var(--danger){% else %}var(--success){% endif %};">
+        {{ summary.materials.low_stock }}
+      </div>
+      <div class="kpi-subtext">
+        {% if summary.materials.low_stock > 0 %}
+          <span style="color: var(--danger); font-weight: 600;">Restocking Required</span>
+        {% else %}
+          <span style="color: var(--success); font-weight: 600;">Inventory Healthy</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Machine Fleet Status -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Machine Status Fleet</h3>
+        <a href="{{ url_for('machines') }}" class="btn btn-outline btn-sm">Manage All</a>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Machine</th>
+              <th>Type</th>
+              <th>Hourly Rate</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in machines %}
+              <tr>
+                <td>
+                  <strong>{{ m.name }}</strong><br>
+                  <span style="font-family: monospace; font-size: 11px; color: #64748b;">{{ m.code }}</span>
+                </td>
+                <td>{{ m.machine_type }}</td>
+                <td>${{ m.hourly_rate }}/hr</td>
+                <td>
+                  <span class="status-badge {{ m.status }}">{{ m.status }}</span>
+                </td>
+                <td>
+                  <form method="POST" action="{{ url_for('update_machine_status_route', machine_id=m.id) }}" style="display:inline;">
+                    {% if m.status == 'Running' %}
+                      <button type="submit" name="status" value="Idle" class="btn btn-outline btn-sm" title="Mark Idle">Pause</button>
+                    {% elif m.status == 'Idle' %}
+                      <button type="submit" name="status" value="Maintenance" class="btn btn-warning btn-sm" title="Trigger Maintenance">Maint</button>
+                    {% else %}
+                      <button type="submit" name="status" value="Idle" class="btn btn-success btn-sm" title="Mark Ready">Online</button>
+                    {% endif %}
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Live Event Stream -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Recent Production Audit Logs</h3>
+        <a href="{{ url_for('java_monitor') }}" class="btn btn-outline btn-sm">Live Monitor</a>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px; max-height: 380px; overflow-y: auto;">
+        {% if recent_logs %}
+          {% for log in recent_logs %}
+            <div style="font-size: 12.5px; padding: 10px; background-color: #f8fafc; border-radius: 6px; border-left: 3px solid {% if log.event_type == 'ERROR' %}var(--danger){% elif log.event_type == 'START' or log.event_type == 'COMPLETION' %}var(--success){% elif log.event_type == 'LOCK_ACQUIRED' %}var(--primary){% else %}#94a3b8{% endif %};">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span style="font-weight: 700; color: #1e293b;">[{{ log.event_type }}] {{ log.thread_id or 'System' }}</span>
+                <span style="color: #94a3b8; font-size: 11px;">{{ log.timestamp }}</span>
+              </div>
+              <div style="color: #475569;">{{ log.message }}</div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p style="color: #94a3b8; text-align: center; padding: 20px;">No production logs recorded yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Jobs Overview -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Active Production Pipeline</h3>
+      <div>
+        <a href="{{ url_for('jobs') }}" class="btn btn-outline btn-sm">View All Jobs</a>
+        <a href="{{ url_for('gantt_view') }}" class="btn btn-primary btn-sm">View Gantt Chart</a>
+      </div>
+    </div>
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Job #</th>
+            <th>Title & Product</th>
+            <th>Priority</th>
+            <th>Duration</th>
+            <th>Assigned Machine</th>
+            <th>Assigned Worker</th>
+            <th>Progress</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for j in jobs %}
+            <tr>
+              <td><strong>{{ j.job_number }}</strong></td>
+              <td>
+                <span style="font-weight: 600;">{{ j.title }}</span><br>
+                <span style="font-size: 11px; color: #64748b;">{{ j.product_type }} (Qty: {{ j.quantity }})</span>
+              </td>
+              <td>
+                <span class="priority-badge {{ j.priority }}">{{ j.priority }}</span>
+              </td>
+              <td>{{ j.processing_time_minutes }}m</td>
+              <td>{{ j.machine_name or '<span style="color:#94a3b8;">Unassigned</span>'|safe }}</td>
+              <td>{{ j.worker_name or '<span style="color:#94a3b8;">Unassigned</span>'|safe }}</td>
+              <td style="min-width: 120px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <div class="progress-bar-bg" style="height: 6px;">
+                    <div class="progress-bar-fill" style="width: {{ j.progress_percentage }}%;"></div>
+                  </div>
+                  <span style="font-size: 11px; font-weight: 600; width: 30px;">{{ j.progress_percentage }}%</span>
+                </div>
+              </td>
+              <td>
+                <span class="status-badge {{ j.status }}">{{ j.status }}</span>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

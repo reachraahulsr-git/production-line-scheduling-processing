@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Materials - Production Line Resource Scheduling System{% endblock %}
+{% block page_title %}Raw Materials & Inventory Deficit Monitoring{% endblock %}
+
+{% block top_actions %}
+  <button type="button" class="btn btn-primary btn-sm" onclick="openCreateMaterialModal()">+ Add Material</button>
+{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>SKU Code</th>
+            <th>Material Name</th>
+            <th>Category</th>
+            <th>Available Stock</th>
+            <th>Min Threshold</th>
+            <th>Unit Cost</th>
+            <th>Inventory Health</th>
+            <th>Quick Restock</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in materials %}
+            <tr>
+              <td><strong style="font-family: monospace;">{{ m.material_code }}</strong></td>
+              <td><strong>{{ m.name }}</strong></td>
+              <td>{{ m.category }}</td>
+              <td>
+                <span style="font-weight: 700; font-size: 14px;">{{ m.stock_quantity }}</span> {{ m.unit }}
+              </td>
+              <td>{{ m.minimum_threshold }} {{ m.unit }}</td>
+              <td>${{ m.unit_cost }}/{{ m.unit }}</td>
+              <td>
+                {% if m.stock_quantity <= m.minimum_threshold %}
+                  <span class="status-badge Error">LOW STOCK DEFICIT</span>
+                {% elif m.stock_quantity <= m.minimum_threshold * 1.5 %}
+                  <span class="status-badge Maintenance">REORDER SOON</span>
+                {% else %}
+                  <span class="status-badge Completed">HEALTHY</span>
+                {% endif %}
+              </td>
+              <td>
+                <form method="POST" action="{{ url_for('restock_material', material_id=m.id) }}" style="display: flex; gap: 4px; align-items: center;">
+                  <input type="number" name="quantity" value="50" min="1" class="form-control" style="width: 70px; padding: 2px 6px; font-size: 12px;">
+                  <button type="submit" class="btn btn-success btn-sm" style="padding: 2px 8px;">+Add</button>
+                </form>
+              </td>
+              <td>
+                <form method="POST" action="{{ url_for('delete_material', material_id=m.id) }}" onsubmit="return confirm('Delete material item {{ m.name }}?');">
+                  <button type="submit" class="btn btn-sm btn-outline" style="color: var(--danger); padding: 3px 6px;">✕</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Add Material Modal -->
+  <div id="createMaterialModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 style="font-size: 16px; font-weight: 700;">Add Raw Material SKU</h3>
+        <button type="button" onclick="closeCreateMaterialModal()" style="border:none;background:none;font-size:18px;cursor:pointer;">✕</button>
+      </div>
+      <div class="modal-body">
+        <form method="POST" action="{{ url_for('create_material') }}">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Material Code</label>
+              <input type="text" name="material_code" class="form-control" placeholder="e.g. MAT-COP-01" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Material Name</label>
+              <input type="text" name="name" class="form-control" placeholder="e.g. Oxygen-Free Copper Bar" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Category</label>
+              <input type="text" name="category" class="form-control" placeholder="e.g. Metals / Conductors" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Measurement Unit</label>
+              <input type="text" name="unit" class="form-control" placeholder="e.g. kg or meters" value="kg" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Initial Stock</label>
+              <input type="number" step="0.5" name="stock_quantity" class="form-control" value="100.0" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Unit Cost ($)</label>
+              <input type="number" step="0.1" name="unit_cost" class="form-control" value="12.5" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Minimum Threshold</label>
+              <input type="number" step="0.5" name="minimum_threshold" class="form-control" value="30.0" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Primary Supplier</label>
+              <input type="text" name="supplier" class="form-control" value="Metals Global LLC" required>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+            <button type="button" class="btn btn-outline" onclick="closeCreateMaterialModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Material</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function openCreateMaterialModal() {
+    document.getElementById('createMaterialModal').style.display = 'flex';
+  }
+  function closeCreateMaterialModal() {
+    document.getElementById('createMaterialModal').style.display = 'none';
+  }
+</script>
+{% endblock %}

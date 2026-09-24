@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics & SymPy - Production Line Resource Scheduling System{% endblock %}
+{% block page_title %}Predictive Analytics & SymPy Symbolic Optimization{% endblock %}
+
+{% block content %}
+  <!-- OEE & Utilization Metrics -->
+  <div class="grid-4">
+    <div class="kpi-card">
+      <div class="kpi-label">OEE Index (Equipment Effectiveness)</div>
+      <div class="kpi-value" style="color: var(--primary);">{{ data.overview.oee_score }}%</div>
+      <div class="kpi-subtext">
+        Avail: {{ data.overview.oee_breakdown.availability }}% • Perf: {{ data.overview.oee_breakdown.performance }}% • Qual: {{ data.overview.oee_breakdown.quality }}%
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-label">Machine Fleet Utilization</div>
+      <div class="kpi-value">{{ data.overview.machine_utilization_rate }}%</div>
+      <div class="kpi-subtext">Active running machine capacity</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-label">Worker Floor Utilization</div>
+      <div class="kpi-value">{{ data.overview.worker_utilization_rate }}%</div>
+      <div class="kpi-subtext">Assigned skilled labor force</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-label">On-Time Probability (Monte Carlo)</div>
+      <div class="kpi-value" style="color: var(--success);">{{ data.monte_carlo.on_time_probability_percent }}%</div>
+      <div class="kpi-subtext">P95 Risk Duration: {{ data.monte_carlo.p95_risk_duration_mins }}m</div>
+    </div>
+  </div>
+
+  <!-- SymPy Symbolic Mathematical Formulations -->
+  <div class="card" style="border-left: 4px solid #6366f1;">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title">🔬 SymPy Symbolic Calculus & Demand Optimization</h3>
+        <p style="font-size: 13px; color: #64748b; margin-top: 4px;">
+          Analytical derivations calculated using Python's <code>sympy</code> symbolic mathematics library.
+        </p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- 1. Optimal Batch Quantity Calculus -->
+      <div style="background-color: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+        <h4 style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 8px;">1. Economic Lot Size Optimization</h4>
+        <div style="font-size: 12.5px; color: #475569; margin-bottom: 10px; line-height: 1.5;">
+          Finds batch size \(q^*\) that minimizes holding + setup costs by solving \(\frac{dC}{dq} = 0\).
+        </div>
+        <div style="background: white; border: 1px dashed #cbd5e1; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 11px; margin-bottom: 12px;">
+          <strong>Cost Function:</strong> C(q) = {{ data.sympy_optimization.batch_size.cost_function_latex }}<br>
+          <strong>Derivative:</strong> dC/dq = {{ data.sympy_optimization.batch_size.derivative_latex }}
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px;">
+          <span>Optimal Batch Size: <strong style="color: #0284c7;">{{ data.sympy_optimization.batch_size.optimal_batch_units }} units</strong></span>
+          <span>Annual Cost: <strong>${{ data.sympy_optimization.batch_size.minimized_annual_cost }}</strong></span>
+        </div>
+      </div>
+
+      <!-- 2. Machine Processing Speed Optimization -->
+      <div style="background-color: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+        <h4 style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 8px;">2. Machine Operating Speed vs Energy & Labor</h4>
+        <div style="font-size: 12.5px; color: #475569; margin-bottom: 10px; line-height: 1.5;">
+          Balances cubic electrical consumption \(E(v) = k_1 v^3\) against operator wages by solving \(\frac{dC_{tot}}{dv} = 0\).
+        </div>
+        <div style="background: white; border: 1px dashed #cbd5e1; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 11px; margin-bottom: 12px;">
+          <strong>Optimal Speed Solution:</strong> v* = {{ data.sympy_optimization.machine_speed.speed_formula_latex }}
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px;">
+          <span>Optimal Speed: <strong style="color: #0284c7;">{{ data.sympy_optimization.machine_speed.optimal_speed_rpm }} RPM</strong></span>
+          <span>Cycle Time: <strong>{{ data.sympy_optimization.machine_speed.cycle_time_hours }} hrs</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Throughput Integral -->
+    <div style="margin-top: 16px; background-color: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+      <h4 style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 8px;">3. Cumulative Production Calculus (Learning Curve Integration)</h4>
+      <div style="font-size: 12.5px; color: #475569; margin-bottom: 10px;">
+        Definite integration of throughput rate \(P(t) = P_{max}(1 - e^{-kt})\) over shift duration \(T = {{ data.sympy_optimization.cumulative_integral.shift_hours }} \text{ hrs}\):
+      </div>
+      <div style="background: white; border: 1px dashed #cbd5e1; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; margin-bottom: 8px;">
+        <strong>Integral Formula:</strong> Q(T) = \int_0^T P(t) dt = {{ data.sympy_optimization.cumulative_integral.integral_formula_latex }}
+      </div>
+      <div style="font-size: 13px;">
+        Expected Shift Output: <strong style="color: #0284c7;">{{ data.sympy_optimization.cumulative_integral.cumulative_units_produced }} units</strong>
+        (Average throughput: <strong>{{ data.sympy_optimization.cumulative_integral.average_hourly_rate }} units/hr</strong>)
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Python Multiprocessing Monte Carlo Simulation -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Parallel Monte Carlo Variability Simulation</h3>
+        <span style="font-size: 11px; background-color: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 10px; font-weight: 700;">
+          {{ data.monte_carlo.cores_utilized }} Process Cores
+        </span>
+      </div>
+      <div style="font-size: 13px; color: #475569; margin-bottom: 14px;">
+        Simulated <strong>{{ data.monte_carlo.num_iterations }}</strong> stochastic manufacturing runs with tool wear variance in <strong>{{ data.monte_carlo.multiprocessing_time_ms }} ms</strong> using Python multiprocessing:
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Percentile Metric</th>
+              <th>Simulated Duration</th>
+              <th>Risk Evaluation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Mean Expected Duration</td>
+              <td><strong>{{ data.monte_carlo.mean_duration_mins }} mins</strong></td>
+              <td><span class="status-badge Completed">Nominal</span></td>
+            </tr>
+            <tr>
+              <td>Median Duration (P50)</td>
+              <td>{{ data.monte_carlo.p50_duration_mins }} mins</td>
+              <td><span class="status-badge Completed">Typical</span></td>
+            </tr>
+            <tr>
+              <td>P95 High-Risk Scenario</td>
+              <td>{{ data.monte_carlo.p95_risk_duration_mins }} mins</td>
+              <td><span class="status-badge Maintenance">Buffer Needed</span></td>
+            </tr>
+            <tr>
+              <td>P99 Worst Case Variance</td>
+              <td>{{ data.monte_carlo.p99_worst_case_mins }} mins</td>
+              <td><span class="status-badge Error">Outlier</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 7-Day Production Forecast -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">7-Day Production Trend & Predictive Forecast</h3>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Forecasted Units</th>
+              <th>Confidence Range (90%)</th>
+              <th>Trajectory</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pred in data.predictions %}
+              <tr>
+                <td><strong>{{ pred.date }}</strong></td>
+                <td><strong style="color: #0284c7;">{{ pred.forecasted_units }}</strong></td>
+                <td style="font-size: 11.5px; color: #64748b;">{{ pred.lower_bound }} - {{ pred.upper_bound }} units</td>
+                <td>
+                  <span style="color: var(--success); font-weight: 600;">↗ Trend +</span>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}

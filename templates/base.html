@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Production Line Resource Scheduling System{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">PL</div>
+        <div class="sidebar-title">
+          <h1>ProdScheduler</h1>
+          <p>CSE Industrial Suite</p>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Core Operations</div>
+        <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.path == '/dashboard' %}active{% endif %}">
+          <span>📊</span> Dashboard
+        </a>
+        <a href="{{ url_for('jobs') }}" class="nav-item {% if request.path == '/jobs' %}active{% endif %}">
+          <span>📋</span> Production Jobs
+        </a>
+        <a href="{{ url_for('scheduling') }}" class="nav-item {% if request.path == '/scheduling' %}active{% endif %}">
+          <span>⚡</span> Scheduling Engine
+        </a>
+        <a href="{{ url_for('gantt_view') }}" class="nav-item {% if request.path == '/gantt' %}active{% endif %}">
+          <span>📅</span> Gantt Schedule
+        </a>
+        <a href="{{ url_for('conflicts') }}" class="nav-item {% if request.path == '/conflicts' %}active{% endif %}">
+          <span>⚠️</span> Conflict Hub
+          {% if active_alerts %}
+            <span class="badge">{{ active_alerts|length }}</span>
+          {% endif %}
+        </a>
+
+        <div class="nav-section-title">Execution & Hardware</div>
+        <a href="{{ url_for('java_monitor') }}" class="nav-item {% if request.path == '/java-monitor' %}active{% endif %}">
+          <span>☕</span> Java Thread Monitor
+        </a>
+        <a href="{{ url_for('machines') }}" class="nav-item {% if request.path == '/machines' %}active{% endif %}">
+          <span>⚙️</span> Machines Fleet
+        </a>
+        <a href="{{ url_for('workers') }}" class="nav-item {% if request.path == '/workers' %}active{% endif %}">
+          <span>👷</span> Worker Roster
+        </a>
+        <a href="{{ url_for('materials') }}" class="nav-item {% if request.path == '/materials' %}active{% endif %}">
+          <span>📦</span> Materials Inventory
+        </a>
+
+        <div class="nav-section-title">Analytics & Billing</div>
+        <a href="{{ url_for('analytics') }}" class="nav-item {% if request.path == '/analytics' %}active{% endif %}">
+          <span>📈</span> SymPy Analytics
+        </a>
+        <a href="{{ url_for('reports') }}" class="nav-item {% if request.path == '/reports' %}active{% endif %}">
+          <span>📄</span> Production Reports
+        </a>
+        <a href="{{ url_for('invoices') }}" class="nav-item {% if request.path.startswith('/invoices') %}active{% endif %}">
+          <span>💰</span> Invoices
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-badge">
+          <span class="user-name">{{ current_user.username if current_user else 'Guest' }}</span>
+          <span class="user-role">{{ current_user.role if current_user else 'Visitor' }}</span>
+        </div>
+        <a href="{{ url_for('logout') }}" class="logout-btn">Sign Out</a>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-wrapper">
+      <header class="top-navbar">
+        <h2 class="top-title">{% block page_title %}Production Dashboard{% endblock %}</h2>
+        <div class="top-actions">
+          <div class="live-indicator">
+            <div class="pulse-dot"></div>
+            <span>Java Socket IPC Active</span>
+          </div>
+          {% block top_actions %}{% endblock %}
+        </div>
+      </header>
+
+      <section class="content-body">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">
+                <span>{{ message }}</span>
+                <button type="button" style="background:none;border:none;cursor:pointer;font-weight:bold;" onclick="this.parentElement.remove()">✕</button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </section>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
