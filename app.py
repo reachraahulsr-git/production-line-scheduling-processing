@@ -599,6 +599,31 @@ def view_invoice(invoice_id):
         return redirect(url_for("invoices"))
     return render_template("invoice_detail.html", invoice=invoice)
 
+# ----------------- Error Handlers -----------------
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    import traceback
+    traceback.print_exc()
+    error_msg = str(e)
+    return render_template(
+        "error.html",
+        error_code=500,
+        error_title="Internal Server Error",
+        error_message="The scheduling system encountered an unexpected condition. Please try again or return to the dashboard.",
+        error_details=error_msg
+    ), 500
+
+@app.errorhandler(404)
+def not_found_error(e):
+    return render_template(
+        "error.html",
+        error_code=404,
+        error_title="Page Not Found",
+        error_message="The requested production resource or page could not be located.",
+        error_details=str(e)
+    ), 404
+
 # ----------------- Application Entry -----------------
 
 if __name__ == "__main__":

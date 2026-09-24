@@ -94,6 +94,23 @@
       • Plant Manager: <code>manager</code> / <code>manager123</code><br>
       • Operator: <code>operator</code> / <code>operator123</code>
     </div>
+
+    <div style="margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 14px;">
+      <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; margin-bottom: 8px; text-align: center;">Instant 1-Click Access</div>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" class="btn btn-outline btn-sm" style="flex: 1; font-size: 11.5px; padding: 6px 4px; justify-content: center;" onclick="quickLogin('admin', 'admin123')">🔑 Admin</button>
+        <button type="button" class="btn btn-outline btn-sm" style="flex: 1; font-size: 11.5px; padding: 6px 4px; justify-content: center;" onclick="quickLogin('manager', 'manager123')">🏭 Manager</button>
+        <button type="button" class="btn btn-outline btn-sm" style="flex: 1; font-size: 11.5px; padding: 6px 4px; justify-content: center;" onclick="quickLogin('operator', 'operator123')">👷 Operator</button>
+      </div>
+    </div>
   </div>
+
+  <script>
+    function quickLogin(username, password) {
+      document.querySelector('input[name="username"]').value = username;
+      document.querySelector('input[name="password"]').value = password;
+      document.querySelector('form').submit();
+    }
+  </script>
 </body>
 </html>

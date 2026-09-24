@@ -26,7 +26,7 @@ class PriorityAnalyzer:
     }
 
     @classmethod
-    def calculate_priority_score(cls, job: Dict[str, Any], reference_time: Optional[datetime] = None) -> float:
+    def calculate_priority_details(cls, job: Dict[str, Any], reference_time: Optional[datetime] = None) -> Dict[str, Any]:
         if reference_time is None:
             reference_time = datetime.now()
 
@@ -57,11 +57,21 @@ class PriorityAnalyzer:
 
         # 3. Shortest Processing Time (SPT) Bonus (15% weight)
         proc_time = float(job.get("processing_time_minutes", 60))
-        # Jobs under 60 mins receive higher SPT bonus to quickly free up resources
         spt_score = max(10.0, min(100.0, 120.0 - (proc_time / 3.0)))
 
-        composite_score = (0.50 * base_weight) + (0.35 * urgency_score) + (0.15 * spt_score)
-        return round(composite_score, 2)
+        composite_score = round((0.50 * base_weight) + (0.35 * urgency_score) + (0.15 * spt_score), 2)
+        return {
+            "composite_score": composite_score,
+            "breakdown": {
+                "base_weight": round(base_weight, 1),
+                "urgency_score": round(urgency_score, 1),
+                "spt_score": round(spt_score, 1)
+            }
+        }
+
+    @classmethod
+    def calculate_priority_score(cls, job: Dict[str, Any], reference_time: Optional[datetime] = None) -> float:
+        return cls.calculate_priority_details(job, reference_time)["composite_score"]
 
     @classmethod
     def rank_jobs(cls, jobs: List[Dict[str, Any]], heuristic: str = "BALANCED") -> List[Dict[str, Any]]:
@@ -70,7 +80,10 @@ class PriorityAnalyzer:
         annotated = []
         for j in jobs:
             item = dict(j)
-            item["priority_score"] = cls.calculate_priority_score(j, now)
+            det = cls.calculate_priority_details(j, now)
+            item["priority_score"] = det["composite_score"]
+            item["composite_priority_score"] = det["composite_score"]
+            item["score_breakdown"] = det["breakdown"]
             annotated.append(item)
 
         if heuristic == "EDD": # Earliest Due Date
@@ -251,13 +264,8 @@ class SchedulingEngine:
         active_workers = [w for w in workers if w["availability_status"] != "On Leave"]
 
         # Track timeline reservations per machine and per worker: list of (start_dt, end_dt, job_id)
-        machine_timeline: Dict[int, List[Tuple[datetime, datetime, int]]] = {m["id"]: [] }
-        for m in machines:
-            machine_timeline[m["id"]] = []
-
-        worker_timeline: Dict[int, List[Tuple[datetime, datetime, int]]] = {w["id"]: []}
-        for w in workers:
-            worker_timeline[w["id"]] = []
+        machine_timeline: Dict[int, List[Tuple[datetime, datetime, int]]] = {m["id"]: [] for m in machines}
+        worker_timeline: Dict[int, List[Tuple[datetime, datetime, int]]] = {w["id"]: [] for w in workers}
 
         # If we didn't clear existing, populate timelines from active schedules
         if not auto_clear_existing:
